@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: components/ShowBoard.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: components/ShowBoard.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import { useState, useEffect } from "react";
+import GameBoardCellList from "./GameBoardCellList";
+
+/**
+ * Renders GameBoard With User provided Game Config.
+ * @param {JSON} config Parent pros.
+ * @returns {JSX} rendered Game Board view.
+ */
+function ShowBoard({config}) {
+    
+    const [gameBoardState, setGameBoardState] = useState({
+        boardData: [],
+        gameBombCount: 0, 
+        gameStatus : 'Started'
+    });
+
+    useEffect(() => {
+        let boardData = initializeBoard(config);
+        const updatedGameBoardState = {
+            ... gameBoardState,
+            boardData : boardData,
+            gameBombCount: config.bombs,
+        }
+        setGameBoardState(updatedGameBoardState);
+    }, [config]);
+
+    const handleClick = (xPosition, yPosition) => {
+        let data = gameBoardState.boardData;
+        data[xPosition][yPosition].isFlagged = false;
+        data[xPosition][yPosition].isRevealed = true;
+        const updatedGameBoardState = {
+            ... gameBoardState,
+            boardData : data
+        }
+        setGameBoardState(updatedGameBoardState);
+    };
+    
+    return &lt;div>
+        &lt;div className="game-title">This is the game board !&lt;/div>
+        &lt;div className="game-canvas">
+           &lt;div>&lt;GameBoardCellList onCellClick={handleClick} cellList={gameBoardState.boardData}/>&lt;/div>
+        &lt;/div>
+    &lt;/div>;
+}
+
+function initializeBoard(config) {
+    console.log("initializeBoard is called ");
+
+    //Initialize an empty board according to width and height
+    let board = createEmptyBoard(config.width, config.height);
+
+    //Randomly assign bombs to the board
+    plantBombs(board, config.width, config.height, config.bombs);
+
+    //Find neighbouring bombs
+    calculateNeighbouringBombs(board, config.width, config.height);
+    console.log("Returning board = " + JSON.stringify( board));
+    return board;
+}
+
+function createEmptyBoard(width, height) {  
+    let data = [];
+    for (let i = 0; i &lt; height; i++ ) {
+        data.push([]);
+        for (let j = 0; j &lt; width; j++) {
+            data[i][j] = {
+                x : i,
+                y : j,
+                isHidden: true,
+                isBomb: false,
+                isFlagged: false,
+                neighbourBombCount:0,
+                isRevealed: false,
+            };
+        }
+    }
+    return data;
+}
+
+
+function generateRandomPosition(value) {
+    return Math.floor((Math.random() * 1000) + 1) % value;
+}
+
+function plantBombs(emptyBoard, width, height, noOfbombs) {
+    let randX, randY, plantedBombs = 0;
+    while (plantedBombs &lt; noOfbombs) {
+        randX = generateRandomPosition(width);
+        randY = generateRandomPosition(height);
+        if (!emptyBoard[randX][randY].isBomb) {
+            emptyBoard[randX][randY].isBomb = true;
+            plantedBombs ++;
+        }
+    }
+}
+
+function calculateNeighbouringBombs(board, width, height) {
+    for (let i = 0; i &lt; height; i++) {
+        for (let j = 0; j &lt; width; j++) {
+            if (!board[i][j].isBomb) {
+                let neighbourList = getSurroundingNeighbours(board, board[i][j].x, board[i][j].y, width, height);
+                let neighbouringBombsCount = 0;
+                neighbourList.map(neighbour => {
+                    if (neighbour.isBomb) {
+                        neighbouringBombsCount++;
+                    }
+                });
+                if (neighbouringBombsCount > 0) {
+                    board[i][j].neighbourBombCount = neighbouringBombsCount;
+                } 
+            }
+        }
+    }
+}
+
+function getSurroundingNeighbours(board, xPosition, yPosition, width, height) {
+    let neighbourList = [];
+
+    // Get UP position neighbour
+    if (yPosition &lt; height - 1) {
+        neighbourList.push(board[xPosition][yPosition + 1]);
+    }
+
+    // Get DOWN position neighbour
+    if (yPosition > 0) {
+        neighbourList.push(board[xPosition][yPosition - 1]);
+    }
+
+    // Get LEFT position neighbour
+    if (xPosition > 0) {
+        neighbourList.push(board[xPosition - 1][yPosition]);
+    }
+
+    // Get RIGHT position neighbour
+    if (xPosition &lt; width - 1) {
+        neighbourList.push(board[xPosition + 1][yPosition]);
+    }
+
+    // Get UP LEFT position neighbour
+    if (yPosition &lt; height - 1 &amp;&amp; xPosition > 0) {
+        neighbourList.push(board[xPosition - 1][yPosition + 1]);
+    }
+
+    // Get UP RIGHT position neighbour
+    if (yPosition &lt; height - 1 &amp;&amp; xPosition &lt; width - 1) {
+        neighbourList.push(board[xPosition + 1][yPosition + 1]);
+    }
+
+    // Get DOWN LEFT position neighbour
+    if (yPosition > 0 &amp;&amp; xPosition > 0) {
+        neighbourList.push(board[xPosition - 1][yPosition - 1]);
+    }
+
+    // Get DOWN RIGHT position neighbour
+    if (yPosition > 0 &amp;&amp; xPosition &lt; width - 1) {
+        neighbourList.push(board[xPosition + 1][yPosition - 1]);
+    }
+
+    return neighbourList;
+}
+
+export default ShowBoard;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#App">App</a></li><li><a href="global.html#GameBoardCell">GameBoardCell</a></li><li><a href="global.html#GameBoardCellList">GameBoardCellList</a></li><li><a href="global.html#GameConfigForm">GameConfigForm</a></li><li><a href="global.html#ShowBoard">ShowBoard</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Mon Apr 24 2023 15:02:33 GMT+1000 (Australian Eastern Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
